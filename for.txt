@@ -1,0 +1,120 @@
+//LEX
+
+
+%{
+#include "y.tab.h"
+%}
+
+%%
+
+"for"                  { return FOR; }
+[a-zA-Z][a-zA-Z0-9]*    { return ID; }
+[0-9]+                 { return NUM; }
+"<="                   { return LE; }
+">="                   { return GE; }
+"=="                   { return EQ; }
+"!="                   { return NE; }
+"++"                   { return INC; }
+"--"                   { return DEC; }
+[ \t\n]                ;
+.                      { return yytext[0]; }
+
+%%
+
+int yywrap()
+{
+    return 1;
+}
+
+
+//YACC
+
+
+%{
+#include <stdio.h>
+
+int yylex(void);
+void yyerror(const char *s);
+%}
+
+%token FOR ID NUM LE GE EQ NE INC DEC
+
+%%
+
+stmt:
+    FOR '(' opt_init ';' opt_cond ';' opt_upd ')'
+    {
+        printf("Valid FOR statement\n");
+        YYACCEPT;
+    }
+    ;
+
+opt_init:
+      init
+    | /* empty */
+    ;
+
+opt_cond:
+      cond
+    | /* empty */
+    ;
+
+opt_upd:
+      upd
+    | /* empty */
+    ;
+
+init:
+    ID '=' expr
+    ;
+
+cond:
+    expr relop expr
+    ;
+
+relop:
+      '<'
+    | '>'
+    | LE
+    | GE
+    | EQ
+    | NE
+    ;
+
+upd:
+      ID INC
+    | ID DEC
+    | ID '=' expr
+    ;
+
+expr:
+      expr '+' term
+    | expr '-' term
+    | term
+    ;
+
+term:
+      ID
+    | NUM
+    ;
+
+%%
+
+void yyerror(const char *s)
+{
+    printf("Invalid FOR statement\n");
+}
+
+int main()
+{
+    printf("Enter FOR statement: ");
+    yyparse();
+    return 0;
+}
+
+
+//COMMANDS FOR EXECUTION
+yacc -d for.y
+lex for.l
+gcc y.tab.c lex.yy.c -o forloop
+./forloop
