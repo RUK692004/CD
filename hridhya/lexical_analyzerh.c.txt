@@ -1,0 +1,89 @@
+#include<stdio.h>
+#include<ctype.h>
+#include<string.h>
+
+int keyword(char s[])
+{
+    char *k[] = {
+        "int", "float", "char", "if", "else",
+        "while", "for", "return", "void"
+    };
+
+    int n = 9, i;
+
+    for(i = 0; i < n; i++)
+        if(strcmp(s, k[i]) == 0)
+            return 1;
+
+    return 0;
+}
+
+int main()
+{
+    char str[1000], word[50];
+    int i = 0, j;
+
+    printf("Enter source code:\n");
+
+    while((str[i] = getchar()) != EOF)
+        i++;
+
+    str[i] = '\0';
+
+    i = 0;
+
+    while(str[i] != '\0')
+    {
+        /* Ignore spaces, tabs and newlines */
+        if(str[i] == ' ' || str[i] == '\t' || str[i] == '\n')
+        {
+            i++;
+            continue;
+        }
+
+        /* Keyword or Identifier */
+        if(isalpha(str[i]))
+        {
+            j = 0;
+
+            while(isalnum(str[i]))
+                word[j++] = str[i++];
+
+            word[j] = '\0';
+
+            if(keyword(word))
+                printf("%s : Keyword\n", word);
+            else
+                printf("%s : Identifier\n", word);
+        }
+
+        /* Number */
+        else if(isdigit(str[i]))
+        {
+            while(isdigit(str[i]))
+                putchar(str[i++]);
+
+            printf(" : Number\n");
+        }
+
+        /* Operator */
+        else if(strchr("+-*/=%<>", str[i]))
+        {
+            printf("%c : Operator\n", str[i]);
+            i++;
+        }
+
+        /* Special Symbol */
+        else if(strchr(";,(){}", str[i]))
+        {
+            printf("%c : Special Symbol\n", str[i]);
+            i++;
+        }
+
+        /* Ignore other characters */
+        else
+            i++;
+    }
+
+    return 0;
+}

@@ -1,0 +1,112 @@
+#include <stdio.h>
+#include <string.h>
+
+char stack[100], input[100];
+int top = 0, pos = 0;
+
+char terminals[] = "+*i()$";
+
+char table[6][6] = {
+    {'>', '<', '<', '<', '>', '>'},
+    {'>', '>', '<', '<', '>', '>'},
+    {'>', '>', ' ', ' ', '>', '>'},
+    {'<', '<', '<', '<', '=', ' '},
+    {'>', '>', ' ', ' ', '>', '>'},
+    {'<', '<', '<', '<', ' ', 'A'}
+};
+
+int idx(char c) {
+    for (int i = 0; i < 6; i++)
+        if (terminals[i] == c)
+            return i;
+
+    return -1;
+}
+
+int main() {
+    printf("Enter expression (use i for identifier): ");
+    scanf("%99s", input);
+
+    strcat(input, "$");
+
+    stack[0] = '$';
+    stack[1] = '\0';
+
+    while (1) {
+        int k = top;
+
+        while (k >= 0 && idx(stack[k]) == -1)
+            k--;
+
+        int r = idx(stack[k]);
+        int c = idx(input[pos]);
+
+        if (r < 0 || c < 0) {
+            puts("Invalid symbol");
+            return 0;
+        }
+
+        printf("Stack: %s Input: %s ", stack, input + pos);
+
+        char rel = table[r][c];
+
+        if (rel == 'A') {
+            puts("ACCEPT");
+            break;
+        }
+
+        if (rel == '<' || rel == '=') {
+            stack[++top] = input[pos++];
+            stack[top + 1] = '\0';
+            puts("SHIFT");
+        }
+        else if (rel == '>') {
+            if (stack[top] == 'i') {
+                stack[top] = 'E';
+                puts("REDUCE E->i");
+            }
+            else if (top >= 2 &&
+                     stack[top] == 'E' &&
+                     stack[top - 1] == '+' &&
+                     stack[top - 2] == 'E') {
+                top -= 2;
+                stack[top] = 'E';
+                stack[top + 1] = '\0';
+                puts("REDUCE E->E+E");
+            }
+            else if (top >= 2 &&
+                     stack[top] == 'E' &&
+                     stack[top - 1] == '*' &&
+                     stack[top - 2] == 'E') {
+                top -= 2;
+                stack[top] = 'E';
+                stack[top + 1] = '\0';
+                puts("REDUCE E->E*E");
+            }
+            else if (top >= 2 &&
+                     stack[top] == ')' &&
+                     stack[top - 1] == 'E' &&
+                     stack[top - 2] == '(') {
+                top -= 2;
+                stack[top] = 'E';
+                stack[top + 1] = '\0';
+                puts("REDUCE E->(E)");
+            }
+            else {
+                puts("REJECT");
+                break;
+            }
+        }
+        else {
+            puts("REJECT");
+            break;
+        }
+
+        if (input[pos] == '$' && top == 1 && stack[1] == 'E') {
+            puts("ACCEPT");
+            break;
+        }
+    }
+
+    return 0;
+}
