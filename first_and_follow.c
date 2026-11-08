@@ -1,12 +1,8 @@
-
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
-#define MAX 20
-#define SIZE 100
-
-char prod[MAX][SIZE], first[26][SIZE], follow[26][SIZE];
+char prod[20][100], first[26][30], follow[26][30];
 int n;
 
 int add(char s[], char c)
@@ -14,9 +10,6 @@ int add(char s[], char c)
     if (!strchr(s, c))
     {
         int l = strlen(s);
-        if (l >= SIZE - 1)
-            return 0;
-
         s[l] = c;
         s[l + 1] = '\0';
         return 1;
@@ -27,64 +20,15 @@ int add(char s[], char c)
 int main()
 {
     printf("Number of productions: ");
-    if (scanf("%d", &n) != 1 || n < 1 || n > MAX)
-    {
-        printf("Invalid number of productions\n");
-        return 1;
-    }
+    scanf("%d", &n);
 
-    printf("Enter productions (e.g. S=AB, # for epsilon):\n");
+    printf("Enter productions, e.g. S=AB (use # for epsilon):\n");
 
     for (int i = 0; i < n; i++)
-    {
-        if (scanf("%99s", prod[i]) != 1 ||
-            !isupper((unsigned char)prod[i][0]) ||
-            prod[i][1] != '=' || prod[i][2] == '\0')
-        {
-            printf("Invalid production\n");
-            return 1;
-        }
-
-        char *rhs = prod[i] + 2;
-        int start = 0;
-
-        while (rhs[start])
-        {
-            int end = start;
-
-            while (rhs[end] && rhs[end] != '|')
-                end++;
-
-            if (end == start)
-            {
-                printf("Invalid production\n");
-                return 1;
-            }
-
-            for (int j = start; j < end; j++)
-            {
-                if (rhs[j] == '#' && (end - start != 1))
-                {
-                    printf("Invalid epsilon production\n");
-                    return 1;
-                }
-            }
-
-            if (rhs[end] == '|' && rhs[end + 1] == '\0')
-            {
-                printf("Invalid production\n");
-                return 1;
-            }
-
-            start = end;
-            if (rhs[start] == '|')
-                start++;
-        }
-    }
+        scanf("%99s", prod[i]);
 
     int changed;
 
-    // Calculate FIRST
     do
     {
         changed = 0;
@@ -92,7 +36,7 @@ int main()
         for (int i = 0; i < n; i++)
         {
             int A = prod[i][0] - 'A';
-            char *rhs = prod[i] + 2;
+            char *rhs = strchr(prod[i], '=') + 1;
             int start = 0;
 
             while (rhs[start])
@@ -109,7 +53,10 @@ int main()
                     char c = rhs[j];
 
                     if (c == '#')
+                    {
+                        changed |= add(first[A], '#');
                         break;
+                    }
 
                     if (!isupper((unsigned char)c))
                     {
@@ -135,16 +82,15 @@ int main()
                     changed |= add(first[A], '#');
 
                 start = end;
+
                 if (rhs[start] == '|')
                     start++;
             }
         }
     } while (changed);
 
-    // Start symbol
     add(follow[prod[0][0] - 'A'], '$');
 
-    // Calculate FOLLOW
     do
     {
         changed = 0;
@@ -152,7 +98,7 @@ int main()
         for (int i = 0; i < n; i++)
         {
             int A = prod[i][0] - 'A';
-            char *rhs = prod[i] + 2;
+            char *rhs = strchr(prod[i], '=') + 1;
             int start = 0;
 
             while (rhs[start])
@@ -203,61 +149,56 @@ int main()
                 }
 
                 start = end;
+
                 if (rhs[start] == '|')
                     start++;
             }
         }
     } while (changed);
 
-    // Display FIRST
-    printf("\nFIRST sets:\n");
+    puts("FIRST sets:");
 
     for (int i = 0; i < n; i++)
     {
         int A = prod[i][0] - 'A';
 
-        printf("FIRST(%c) = { ", prod[i][0]);
+        printf("FIRST(%c)={", prod[i][0]);
 
         for (int j = 0; first[A][j]; j++)
             printf("%c ", first[A][j]);
 
-        printf("}\n");
+        puts("}");
     }
 
-    // Display FOLLOW
-    printf("\nFOLLOW sets:\n");
+    puts("FOLLOW sets:");
 
     for (int i = 0; i < n; i++)
     {
         int A = prod[i][0] - 'A';
 
-        printf("FOLLOW(%c) = { ", prod[i][0]);
+        printf("FOLLOW(%c)={", prod[i][0]);
 
         for (int j = 0; follow[A][j]; j++)
             printf("%c ", follow[A][j]);
 
-        printf("}\n");
+        puts("}");
     }
 
     return 0;
 }
 
 /*
-    Sample Input:
-    Number of productions: 3
-Enter productions (e.g. S=AB, # for epsilon):
-S=AB
-A=a|#
-B=b|#
+Sample Input:
+Number of productions: 2
+Enter productions, e.g. S=AB (use # for epsilon):
+S=aA
+A=b|#
 
 Sample Output:
 FIRST sets:
-FIRST(S) = { a b # }
-FIRST(A) = { a # }
-FIRST(B) = { b # }
-
+FIRST(S)={a }
+FIRST(A)={b # }
 FOLLOW sets:
-FOLLOW(S) = { $ }
-FOLLOW(A) = { b $ }
-FOLLOW(B) = { $ }
+FOLLOW(S)={$ }
+FOLLOW(A)={$ }
 */
