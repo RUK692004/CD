@@ -1,0 +1,69 @@
+//LEX
+//Include this in a file named variable.l
+
+%{
+#include "y.tab.h"
+%}
+
+%%
+
+[A-Za-z][A-Za-z0-9]*  { return ID; }
+[^\n]+                { return INVALID; }
+\n                    { return '\n'; }
+
+%%
+
+int yywrap()
+{
+    return 1;
+}
+
+
+//YACC
+//Include this in a file named variable.y
+
+
+%{
+#include <stdio.h>
+
+int yylex(void);
+void yyerror(const char *s);
+%}
+
+%token ID INVALID
+
+%%
+
+input:
+      ID '\n' {
+          printf("Valid Variable\n");
+          YYACCEPT;
+      }
+    | INVALID '\n' {
+          printf("Invalid Variable\n");
+          YYACCEPT;
+      }
+    ;
+
+%%
+
+void yyerror(const char *s)
+{
+    printf("Invalid Variable\n");
+}
+
+int main()
+{
+    printf("Enter a variable name: ");
+    yyparse();
+    return 0;
+}
+
+
+
+//After Saving Both file Run the following Commands in Order
+
+//yacc -d variable.y
+//lex variable.l
+//gcc y.tab.c lex.yy.c -o variable
+//./variable

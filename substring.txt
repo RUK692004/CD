@@ -1,0 +1,38 @@
+
+%{
+#include <stdio.h>
+%}
+
+%%
+
+//The name have to be changed to your name instead of Arsh
+
+[^\n]*[Aa][Rr][Ss][Hh][^\n]*\n {
+    printf("Rejected: Contains Arsh\n");
+    return 0;
+}
+
+[^\n]*\n {
+    printf("Accepted: Does not contain Arsh\n");
+    return 0;
+}
+
+%%
+
+int main()
+{
+    printf("Enter a string: ");
+    yylex();
+    return 0;
+}
+
+int yywrap()
+{
+    return 1;
+}
+
+
+//The Following Commands to run the program
+lex substring.l
+gcc lex.yy.c -o substring
+./substring
