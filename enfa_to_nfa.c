@@ -1,216 +1,80 @@
+
 #include <stdio.h>
 #define MAX 10
 
-int n, m;
-char symbols[MAX];
-int eps[MAX][MAX];
-int trans[MAX][MAX][MAX];
-int closure[MAX][MAX];
-int newTrans[MAX][MAX][MAX];
-int accepting[MAX];
-int newAccepting[MAX];
+int n,m,eps[MAX][MAX],trans[MAX][MAX][MAX];
+int closure[MAX][MAX],newTrans[MAX][MAX][MAX];
+int final[MAX],newFinal[MAX];
+char sym[MAX];
 
-void dfs(int state, int visited[])
-{
-    visited[state] = 1;
-
-    for (int j = 0; j < n; j++)
-    {
-        if (eps[state][j] && !visited[j])
-        {
-            dfs(j, visited);
-        }
-    }
+void dfs(int s,int v[]){
+    v[s]=1;
+    for(int i=0;i<n;i++)
+        if(eps[s][i] && !v[i])
+            dfs(i,v);
 }
 
-void computeClosure()
-{
-    for (int i = 0; i < n; i++)
-    {
-        int visited[MAX] = {0};
+int main(){
+    int i,j,k,q,p,t,u,s;
 
-        dfs(i, visited);
+    printf("Enter states and symbols count: ");
+    scanf("%d%d",&n,&m);
 
-        for (int j = 0; j < n; j++)
-        {
-            closure[i][j] = visited[j];
-        }
-    }
-}
+    printf("Enter symbols: ");
+    for(i=0;i<m;i++) scanf(" %c",&sym[i]);
 
-int main()
-{
-    int i, j, k;
+    printf("Enter epsilon transition matrix:\n");
+    for(i=0;i<n;i++)
+        for(j=0;j<n;j++)
+            scanf("%d",&eps[i][j]);
 
-    printf("Enter number of states: ");
-    scanf("%d", &n);
-
-    printf("Enter number of input symbols (excluding ε): ");
-    scanf("%d", &m);
-
-    printf("Enter the symbols (space separated): ");
-    for (i = 0; i < m; i++)
-    {
-        scanf(" %c", &symbols[i]);
+    for(k=0;k<m;k++){
+        printf("Enter matrix for %c:\n",sym[k]);
+        for(i=0;i<n;i++)
+            for(j=0;j<n;j++)
+                scanf("%d",&trans[i][j][k]);
     }
 
-    printf("Enter epsilon transition matrix (%d x %d):\n", n, n);
+    printf("Enter final states (-1 to stop): ");
+    while(scanf("%d",&s)==1 && s!=-1)
+        if(s>=0 && s<n) final[s]=1;
 
-    for (i = 0; i < n; i++)
-    {
-        for (j = 0; j < n; j++)
-        {
-            scanf("%d", &eps[i][j]);
-        }
+    for(i=0;i<n;i++){
+        int v[MAX]={0};
+        dfs(i,v);
+        for(j=0;j<n;j++)
+            closure[i][j]=v[j];
     }
 
-    printf("Enter transition matrices for each symbol (0/1):\n");
+    for(q=0;q<n;q++)
+        for(k=0;k<m;k++)
+            for(p=0;p<n;p++)
+                if(closure[q][p])
+                    for(t=0;t<n;t++)
+                        if(trans[p][t][k])
+                            for(u=0;u<n;u++)
+                                if(closure[t][u])
+                                    newTrans[q][u][k]=1;
 
-    for (k = 0; k < m; k++)
-    {
-        printf("Symbol %c:\n", symbols[k]);
-
-        for (i = 0; i < n; i++)
-        {
-            for (j = 0; j < n; j++)
-            {
-                scanf("%d", &trans[i][j][k]);
-            }
-        }
-    }
-
-    printf("Enter accepting states (enter -1 to stop): ");
-
-    int state;
-
-    while (scanf("%d", &state) == 1 && state != -1)
-    {
-        if (state >= 0 && state < n)
-        {
-            accepting[state] = 1;
-        }
-    }
-
-    computeClosure();
-
-    for (i = 0; i < n; i++)
-    {
-        for (k = 0; k < m; k++)
-        {
-            for (j = 0; j < n; j++)
-            {
-                newTrans[i][j][k] = 0;
-            }
-        }
-    }
-
-    for (int q = 0; q < n; q++)
-    {
-        for (int a = 0; a < m; a++)
-        {
-            for (int p = 0; p < n; p++)
-            {
-                if (closure[q][p])
-                {
-                    for (int t = 0; t < n; t++)
-                    {
-                        if (trans[p][t][a])
-                        {
-                            for (int u = 0; u < n; u++)
-                            {
-                                if (closure[t][u])
-                                {
-                                    newTrans[q][u][a] = 1;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    for (int q = 0; q < n; q++)
-    {
-        newAccepting[q] = accepting[q];
-
-        for (int p = 0; p < n; p++)
-        {
-            if (closure[q][p] && accepting[p])
-            {
-                newAccepting[q] = 1;
-                break;
-            }
-        }
-    }
+    for(q=0;q<n;q++)
+        for(p=0;p<n;p++)
+            if(closure[q][p] && final[p])
+                newFinal[q]=1;
 
     printf("\nNFA without epsilon transitions:\n");
-
-    printf("States: ");
-
-    for (i = 0; i < n; i++)
-    {
-        printf("q%d ", i);
-    }
-
-    printf("\n");
-    printf("Transitions:\n");
-
-    for (int q = 0; q < n; q++)
-    {
-        for (int a = 0; a < m; a++)
-        {
-            printf("δ(q%d, %c) = { ", q, symbols[a]);
-
-            int first = 1;
-
-            for (int t = 0; t < n; t++)
-            {
-                if (newTrans[q][t][a])
-                {
-                    if (!first)
-                    {
-                        printf(", ");
-                    }
-
-                    printf("q%d", t);
-                    first = 0;
-                }
-            }
-
-            if (first)
-            {
-                printf("∅");
-            }
-
-            printf(" }\n");
+    for(q=0;q<n;q++)
+        for(k=0;k<m;k++){
+            printf("d(q%d,%c) = { ",q,sym[k]);
+            for(t=0;t<n;t++)
+                if(newTrans[q][t][k])
+                    printf("q%d ",t);
+            printf("}\n");
         }
-    }
 
-    printf("Accepting states: ");
-
-    int first = 1;
-
-    for (i = 0; i < n; i++)
-    {
-        if (newAccepting[i])
-        {
-            if (!first)
-            {
-                printf(", ");
-            }
-
-            printf("q%d", i);
-            first = 0;
-        }
-    }
-
-    if (first)
-    {
-        printf("∅");
-    }
-
-    printf("\n");
+    printf("Final states: ");
+    for(i=0;i<n;i++)
+        if(newFinal[i]) printf("q%d ",i);
 
     return 0;
 }
+    
