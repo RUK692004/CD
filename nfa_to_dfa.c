@@ -168,27 +168,3 @@ int main()
 
     return 0;
 }
-
-/*
-Sample Input:
-Enter expression (use i for identifier): i*(i+i)
-
-Sample Output:
-STACK           INPUT           ACTION
-$               i*(i+i)$        INITIAL
-$i              *(i+i)$ SHIFT
-$E              *(i+i)$ REDUCE E->i
-$E*             (i+i)$  SHIFT
-$E*(            i+i)$   SHIFT
-$E*(i           +i)$    SHIFT
-$E*(E           +i)$    REDUCE E->i
-$E*(E+          i)$     SHIFT
-$E*(E+i         )$      SHIFT
-$E*(E+E         )$      REDUCE E->i
-$E*(E           )$      REDUCE E->E+E
-$E*(E)          $       SHIFT
-$E*E            $       REDUCE E->(E)
-$E              $       REDUCE E->E*E
-
-Accepted
-*/
