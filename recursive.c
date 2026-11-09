@@ -1,138 +1,111 @@
-// RECURSIVE DESCENT PARSER
+
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
-/*
-Grammar:
-E -> T E'
-E' -> + T E' | - T E' | #
-T -> F T'
-T' -> * F T' | / F T' | #
-F -> ( E ) | id
-*/
+
 char input[50];
 int pos = 0;
-char lookahead()
-{
-	return input[pos];
-}
+
+void E(), EP(), T(), TP(), F();
+
 void match(char c)
 {
 	if (input[pos] == c)
 		pos++;
 	else
 	{
-		printf("Error at position %d: expected '%c', got '%c'\n", pos, c, input[pos]);
+		printf("Error at position %d\n", pos);
 		exit(1);
 	}
 }
-void E();
-void EP();
-void T();
-void TP();
-void F();
+
 void E()
 {
 	printf("E -> T E'\n");
 	T();
 	EP();
 }
+
 void EP()
 {
-	if (lookahead() == '+')
+	char c = input[pos];
+	if (c == '+' || c == '-')
 	{
-		printf("E' -> + T E'\n");
-		match('+');
-		T();
-		EP();
-	}
-	else if (lookahead() == '-')
-	{
-		printf("E' -> - T E'\n");
-		match('-');
+		printf("E' -> %c T E'\n", c);
+		match(c);
 		T();
 		EP();
 	}
 	else
-	{
 		printf("E' -> #\n");
-	}
 }
+
 void T()
 {
 	printf("T -> F T'\n");
 	F();
 	TP();
 }
+
 void TP()
 {
-	if (lookahead() == '*')
+	char c = input[pos];
+	if (c == '*' || c == '/')
 	{
-		printf("T' -> * F T'\n");
-		match('*');
-		F();
-		TP();
-	}
-	else if (lookahead() == '/')
-	{
-		printf("T' -> / F T'\n");
-		match('/');
+		printf("T' -> %c F T'\n", c);
+		match(c);
 		F();
 		TP();
 	}
 	else
-	{
 		printf("T' -> #\n");
-	}
 }
+
 void F()
 {
-	if (lookahead() == '(')
+	char c = input[pos];
+	if (c == '(')
 	{
 		printf("F -> ( E )\n");
 		match('(');
 		E();
 		match(')');
 	}
-	else if (isalnum(lookahead()))
+	else if (isalnum(c))
 	{
-		printf("F -> %c\n", lookahead());
+		printf("F -> %c\n", c);
 		pos++;
 	}
 	else
 	{
-		printf("Error at position %d: unexpected '%c'\n", pos, lookahead());
+		printf("Invalid expression\n");
 		exit(1);
 	}
 }
+
 int main()
 {
 	printf("Enter expression (end with $): ");
-	scanf("%s", input);
+	scanf("%49s", input);
 	E();
-	if (input[pos] == '$')
+	if (input[pos] == '$' && input[pos + 1] == '\0')
 		printf("\nParsing successful!\n");
 	else
-		printf("\nError: unexpected character '%c'\n", input[pos]);
+		printf("\nInvalid expression\n");
 	return 0;
 }
-/*
-Sample Input:
-Enter expression (end with $): a+b*c$
 
-Sample Output:
-Enter expression (end with $): a+b*c$
-E -> T E'
-T -> F T'
-F -> a
-T' -> #
-E' -> + T E'
-T -> F T'
-F -> b
-T' -> * F T'
-F -> c
-T' -> #
-E' -> #
+// a+b*c$
+// E -> T E'
+// T -> F T'
+// F -> a
+// T' -> #
+// E' -> + T E'
+// T -> F T'
+// F -> b
+// T' -> * F T'
+// F -> c
+// T' -> #
+// E' -> #
 
-Parsing successful!
-*/
+// Parsing successful!

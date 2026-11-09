@@ -1,204 +1,142 @@
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
-char prod[20][100], first[26][30], follow[26][30];
+char p[20][100], first[26][30], follow[26][30];
 int n;
 
 int add(char s[], char c)
 {
-    if (!strchr(s, c))
-    {
-        int l = strlen(s);
-        s[l] = c;
-        s[l + 1] = '\0';
-        return 1;
-    }
-    return 0;
+    if (strchr(s, c))
+        return 0;
+    int l = strlen(s);
+    s[l] = c;
+    s[l + 1] = 0;
+    return 1;
 }
 
 int main()
 {
-    printf("Number of productions: ");
+    int i, j, k, A, B, C, change;
+    char *r, c;
+
+    printf("Enter number of productions: ");
     scanf("%d", &n);
-
-    printf("Enter productions, e.g. S=AB (use # for epsilon):\n");
-
-    for (int i = 0; i < n; i++)
-        scanf("%99s", prod[i]);
-
-    int changed;
+    printf("Enter productions:\n");
+    for (i = 0; i < n; i++)
+        scanf("%99s", p[i]);
 
     do
     {
-        changed = 0;
-
-        for (int i = 0; i < n; i++)
+        change = 0;
+        for (i = 0; i < n; i++)
         {
-            int A = prod[i][0] - 'A';
-            char *rhs = strchr(prod[i], '=') + 1;
-            int start = 0;
-
-            while (rhs[start])
+            A = p[i][0] - 'A';
+            r = p[i] + 2;
+            int nullable = 1;
+            for (j = 0;; j++)
             {
-                int end = start;
+                c = r[j];
+                if (c == '|' || c == 0)
+                {
+                    if (nullable)
+                        change |= add(first[A], '#');
+                    nullable = 1;
+                    if (!c)
+                        break;
+                }
+                else if (c == '#')
+                    change |= add(first[A], '#');
+                else if (!isupper(c))
+                {
+                    if (nullable)
+                        change |= add(first[A], c);
+                    nullable = 0;
+                }
+                else if (nullable)
+                {
+                    B = c - 'A';
+                    for (k = 0; first[B][k]; k++)
+                        if (first[B][k] != '#')
+                            change |= add(first[A], first[B][k]);
+                    if (!strchr(first[B], '#'))
+                        nullable = 0;
+                }
+            }
+        }
+    } while (change);
 
-                while (rhs[end] && rhs[end] != '|')
-                    end++;
+    add(follow[p[0][0] - 'A'], '$');
 
+    do
+    {
+        change = 0;
+        for (i = 0; i < n; i++)
+        {
+            A = p[i][0] - 'A';
+            r = p[i] + 2;
+            for (j = 0; r[j]; j++)
+            {
+                if (!isupper(r[j]))
+                    continue;
+                B = r[j] - 'A';
                 int nullable = 1;
 
-                for (int j = start; j < end; j++)
+                for (k = j + 1; r[k] && r[k] != '|'; k++)
                 {
-                    char c = rhs[j];
-
+                    c = r[k];
                     if (c == '#')
-                    {
-                        changed |= add(first[A], '#');
-                        break;
-                    }
-
-                    if (!isupper((unsigned char)c))
-                    {
-                        changed |= add(first[A], c);
-                        nullable = 0;
-                        break;
-                    }
-
-                    int B = c - 'A';
-
-                    for (int k = 0; first[B][k]; k++)
-                        if (first[B][k] != '#')
-                            changed |= add(first[A], first[B][k]);
-
-                    if (!strchr(first[B], '#'))
-                    {
-                        nullable = 0;
-                        break;
-                    }
-                }
-
-                if (nullable)
-                    changed |= add(first[A], '#');
-
-                start = end;
-
-                if (rhs[start] == '|')
-                    start++;
-            }
-        }
-    } while (changed);
-
-    add(follow[prod[0][0] - 'A'], '$');
-
-    do
-    {
-        changed = 0;
-
-        for (int i = 0; i < n; i++)
-        {
-            int A = prod[i][0] - 'A';
-            char *rhs = strchr(prod[i], '=') + 1;
-            int start = 0;
-
-            while (rhs[start])
-            {
-                int end = start;
-
-                while (rhs[end] && rhs[end] != '|')
-                    end++;
-
-                for (int j = start; j < end; j++)
-                {
-                    if (!isupper((unsigned char)rhs[j]))
                         continue;
-
-                    int B = rhs[j] - 'A';
-                    int nullable = 1;
-
-                    for (int k = j + 1; k < end; k++)
+                    if (!isupper(c))
                     {
-                        char c = rhs[k];
-
-                        if (c == '#')
-                            continue;
-
-                        if (!isupper((unsigned char)c))
-                        {
-                            changed |= add(follow[B], c);
-                            nullable = 0;
-                            break;
-                        }
-
-                        int C = c - 'A';
-
-                        for (int t = 0; first[C][t]; t++)
-                            if (first[C][t] != '#')
-                                changed |= add(follow[B], first[C][t]);
-
-                        if (!strchr(first[C], '#'))
-                        {
-                            nullable = 0;
-                            break;
-                        }
+                        change |= add(follow[B], c);
+                        nullable = 0;
+                        break;
                     }
-
-                    if (nullable)
-                        for (int k = 0; follow[A][k]; k++)
-                            changed |= add(follow[B], follow[A][k]);
+                    C = c - 'A';
+                    for (int t = 0; first[C][t]; t++)
+                        if (first[C][t] != '#')
+                            change |= add(follow[B], first[C][t]);
+                    if (!strchr(first[C], '#'))
+                    {
+                        nullable = 0;
+                        break;
+                    }
                 }
-
-                start = end;
-
-                if (rhs[start] == '|')
-                    start++;
+                if (nullable)
+                    for (k = 0; follow[A][k]; k++)
+                        change |= add(follow[B], follow[A][k]);
             }
         }
-    } while (changed);
+    } while (change);
 
-    puts("FIRST sets:");
-
-    for (int i = 0; i < n; i++)
+    printf("\nFIRST sets:\n");
+    for (i = 0; i < n; i++)
     {
-        int A = prod[i][0] - 'A';
-
-        printf("FIRST(%c)={", prod[i][0]);
-
-        for (int j = 0; first[A][j]; j++)
-            printf("%c ", first[A][j]);
-
-        puts("}");
+        A = p[i][0] - 'A';
+        printf("FIRST(%c)={%s}\n", p[i][0], first[A]);
     }
 
-    puts("FOLLOW sets:");
-
-    for (int i = 0; i < n; i++)
+    printf("\nFOLLOW sets:\n");
+    for (i = 0; i < n; i++)
     {
-        int A = prod[i][0] - 'A';
-
-        printf("FOLLOW(%c)={", prod[i][0]);
-
-        for (int j = 0; follow[A][j]; j++)
-            printf("%c ", follow[A][j]);
-
-        puts("}");
+        A = p[i][0] - 'A';
+        printf("FOLLOW(%c)={%s}\n", p[i][0], follow[A]);
     }
-
     return 0;
 }
-
 /*
-Sample Input:
-Number of productions: 2
-Enter productions, e.g. S=AB (use # for epsilon):
+Enter number of productions: 2
+Enter productions:
 S=aA
 A=b|#
 
-Sample Output:
 FIRST sets:
-FIRST(S)={a }
-FIRST(A)={b # }
+FIRST(S)={a}
+FIRST(A)={b#}
+
 FOLLOW sets:
-FOLLOW(S)={$ }
-FOLLOW(A)={$ }
+FOLLOW(S)={$}
+FOLLOW(A)={$}
 */
